@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handwritten Digit Recognition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+    <h1 class="text-3xl font-bold mb-4">Draw a Digit (0-9)</h1>
+    <canvas id="canvas" width="280" height="280" class="bg-black border-2 border-white mb-4"></canvas>
+    <div class="flex space-x-4 mb-4">
+        <button id="predictBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Predict</button>
+        <button id="clearBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Clear</button>
+    </div>
+    <div id="prediction" class="text-xl"></div>
+    <div id="probabilities" class="text-sm mt-2"></div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 20;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = 'white';
+
+        let drawing = false;
+        canvas.addEventListener('mousedown', () => drawing = true);
+        canvas.addEventListener('mouseup', () => drawing = false);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('touchstart', (e) => { drawing = true; draw(e); });
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', () => drawing = false);
+
+        function draw(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+
+        // Clear canvas
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('prediction').innerText = '';
+            document.getElementById('probabilities').innerText = '';
+        });
+
+        // Preprocess image
+        function preprocessImage() {
+            // Resize to 28x28
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 28;
+            tempCanvas.height = 28;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0, 28, 28);
+            const imageData = tempCtx.getImageData(0, 0, 28, 28);
+            const data = imageData.data;
+
+            // Convert to grayscale and normalize
+            const input = new Float32Array(784);
+            for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+                const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                input[j] = gray / 255.0; // Normalize to [0, 1]
+            }
+            return tf.tensor2d(input, [1, 784]);
+        }
+
+        // Neural network model
+        async function loadModel() {
+            // Assume weights are saved as JSON or binary in model/ folder
+            const W1 = await (await fetch('model/W1.json')).json();
+            const b1 = await (await fetch('model/b1.json')).json();
+            const W2 = await (await fetch('model/W2.json')).json();
+            const b2 = await (await fetch('model/b2.json')).json();
+
+            return {
+                W1: tf.tensor2d(W1),
+                b1: tf.tensor2d(b1),
+                W2: tf.tensor2d(W2),
+                b2: tf.tensor2d(b2)
+            };
+        }
+
+        function sigmoid(x) {
+            return x.sigmoid();
+        }
+
+        function softmax(x) {
+            const expX = x.sub(x.max()).exp();
+            return expX.div(expX.sum());
+        }
+
+        async function predict() {
+            const model = await loadModel();
+            const input = preprocessImage();
+
+            // Forward propagation
+            const z1 = input.matMul(model.W1.transpose()).add(model.b1.transpose());
+            const a1 = sigmoid(z1);
+            const z2 = a1.matMul(model.W2.transpose()).add(model.b2.transpose());
+            const a2 = softmax(z2);
+
+            const output = await a2.data();
+            const predictedDigit = output.indexOf(Math.max(...output));
+            document.getElementById('prediction').innerText = `Predicted Digit: ${predictedDigit}`;
+            document.getElementById('probabilities').innerText = `Probabilities: ${output.map((p, i) => `${i}: ${p.toFixed(2)}`).join(', ')}`;
+
+            // Clean up
+            input.dispose();
+            a1.dispose();
+            a2.dispose();
+            Object.values(model).forEach(tensor => tensor.dispose());
+        }
+
+        document.getElementById('predictBtn').addEventListener('click', predict);
+    </script>
+</body>
+</html>

@@ -1,116 +1,117 @@
 # Handwritten Digit Recognition Neural Network
 
-A simple neural network implementation for recognizing handwritten digits using the MNIST dataset. This project demonstrates a complete neural network from scratch using NumPy, including forward propagation, backpropagation, and mini-batch gradient descent.
+A simple neural network implementation for recognizing handwritten digits (0-9) using the MNIST dataset.
 
 ## Features
 
-- **From-scratch implementation**: No deep learning frameworks used for the core neural network
-- **MNIST dataset**: Trained on the standard handwritten digit recognition dataset
-- **Interactive web interface**: Draw digits and get predictions in real-time
-- **Mini-batch gradient descent**: Efficient training with configurable batch sizes
-- **Cross-entropy loss**: Proper loss function for multi-class classification
+- **Neural Network**: 2-layer feedforward network (784 → 256 → 10)
+- **Training**: Mini-batch gradient descent with cross-entropy loss
+- **Web Interface**: Interactive drawing canvas for real-time predictions
+- **Model Persistence**: Save and load trained weights
 
 ## Architecture
 
-The neural network has the following architecture:
-- **Input layer**: 784 neurons (28×28 flattened images)
-- **Hidden layer**: 256 neurons with sigmoid activation
-- **Output layer**: 10 neurons with softmax activation (digits 0-9)
+- **Input Layer**: 784 neurons (28×28 pixel images)
+- **Hidden Layer**: 256 neurons with sigmoid activation
+- **Output Layer**: 10 neurons with softmax activation (digits 0-9)
 
-## Installation
+## Setup and Usage
 
-### Option 1: Using Conda (Recommended)
-
-```bash
-# Create and activate conda environment
-conda create -n text_nn python=3.9 -y
-conda activate text_nn
-
-# Install dependencies
-conda install numpy tensorflow matplotlib scikit-learn pandas -y
-```
-
-### Option 2: Using pip
+### 1. Install Dependencies
 
 ```bash
-# Create virtual environment
-python -m venv text_nn
-source text_nn/bin/activate  # On Windows: text_nn\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Usage
+### 2. Train the Model
 
-### Training the Neural Network
+Run the training script to train the neural network and save the weights:
 
 ```bash
-python neural_network.py
+python train_and_save.py
 ```
 
 This will:
-1. Load the MNIST dataset
-2. Train the neural network for 1000 epochs
-3. Display training progress every 100 epochs
-4. Make a prediction on the first training image
+- Load the MNIST dataset
+- Train the neural network for 1000 epochs
+- Save the trained weights to `model/` directory
+- Verify the saved weights work correctly
 
-### Web Interface
+### 3. Use the Web Interface
 
-Open `index.html` in a web browser to:
-- Draw digits on a canvas
-- Get real-time predictions
-- View prediction probabilities
+After training, open `index.html` in your web browser:
 
-## Project Structure
+```bash
+# On macOS/Linux
+open index.html
 
+# Or simply double-click the file in your file explorer
+```
+
+### 4. Draw and Predict
+
+1. Draw a digit (0-9) on the canvas
+2. Click "Predict" to see the neural network's prediction
+3. Click "Clear" to start over
+
+## Files Structure
+
+```
 handwritten-numbers-nn/
-├── neural_network.py # Main neural network implementation
-├── index.html # Web interface for drawing digits
-├── requirements.txt # Python dependencies
-└── README.md # This file
+├── neural_network.py      # Core neural network implementation
+├── train_and_save.py      # Training script that saves weights
+├── index.html             # Web interface
+├── requirements.txt       # Python dependencies
+├── model/                 # Trained weights (created after training)
+│   ├── W1.json           # Hidden layer weights
+│   ├── b1.json           # Hidden layer biases
+│   ├── W2.json           # Output layer weights
+│   └── b2.json           # Output layer biases
+└── README.md             # This file
+```
 
-
-
-## Implementation Details
+## Technical Details
 
 ### Activation Functions
-- **Sigmoid**: Used in hidden layer for non-linearity
-- **Softmax**: Used in output layer for multi-class probabilities
+- **Hidden Layer**: Sigmoid function for non-linearity
+- **Output Layer**: Softmax function for probability distribution
 
 ### Loss Function
-- **Cross-entropy loss**: Proper loss function for classification tasks
+- **Cross-entropy loss** for multi-class classification
 
 ### Training
-- **Mini-batch gradient descent**: Configurable batch size (default: 32)
-- **Learning rate**: Configurable (default: 0.1)
-- **Epochs**: Configurable (default: 1000)
+- **Optimizer**: Mini-batch gradient descent
+- **Batch Size**: 32
+- **Learning Rate**: 0.1
+- **Epochs**: 1000
+
+### Data Preprocessing
+- Images resized to 28×28 pixels
+- Pixel values normalized to [0, 1]
+- Labels converted to one-hot encoding
+
+## Troubleshooting
+
+### "Model files not found" Error
+If you see this error in the web interface:
+1. Make sure you've run `python train_and_save.py` first
+2. Check that the `model/` directory exists with the weight files
+3. Ensure you're serving the files from a web server (not just opening the HTML file)
+
+### Training Issues
+- If training is too slow, reduce the number of epochs in `train_and_save.py`
+- If accuracy is poor, try adjusting the learning rate or hidden layer size
 
 ## Performance
 
-The neural network typically achieves:
-- Training accuracy: ~95%+ after 1000 epochs
-- Test accuracy: ~94%+ on MNIST test set
+The model typically achieves:
+- Training accuracy: ~95%+ on MNIST training set
+- Reasonable performance on hand-drawn digits
 
-## Customization
+## Future Improvements
 
-You can modify the network architecture by changing:
-- `hidden_size` in the `NeuralNetwork` constructor
-- `learning_rate` and `batch_size` in the training call
-- Number of `epochs` for training
-
-## Dependencies
-
-- **NumPy**: Core numerical computations
-- **TensorFlow**: MNIST dataset loading
-- **Matplotlib**: Optional for visualization
-- **scikit-learn**: Optional for evaluation metrics
-- **pandas**: Optional for data manipulation
-
-## License
-
-This project is open source and available under the MIT License.
-
-## Contributing
-
-Feel free to submit issues and enhancement requests!
+- Add data augmentation for better generalization
+- Implement dropout for regularization
+- Add convolutional layers for better feature extraction
+- Support for different model architectures
+- Real-time training visualization

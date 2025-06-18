@@ -1,4 +1,6 @@
 import numpy as np
+import json
+import os
 
 # Sigmoid activation function
 def sigmoid(x):
@@ -78,6 +80,43 @@ class NeuralNetwork:
                 loss = cross_entropy_loss(output, y)
                 print(f"Epoch {epoch}, Loss: {loss:.4f}")
 
+    def save_weights(self, folder_path='model'):
+        """Save trained weights to JSON files"""
+        # Create model directory if it doesn't exist
+        os.makedirs(folder_path, exist_ok=True)
+        
+        # Convert numpy arrays to lists for JSON serialization
+        weights = {
+            'W1': self.W1.tolist(),
+            'b1': self.b1.tolist(),
+            'W2': self.W2.tolist(),
+            'b2': self.b2.tolist()
+        }
+        
+        # Save each weight matrix separately
+        for name, data in weights.items():
+            file_path = os.path.join(folder_path, f'{name}.json')
+            with open(file_path, 'w') as f:
+                json.dump(data, f)
+        
+        print(f"Weights saved to {folder_path}/ directory")
+
+    def load_weights(self, folder_path='model'):
+        """Load trained weights from JSON files"""
+        weights = {}
+        
+        for name in ['W1', 'b1', 'W2', 'b2']:
+            file_path = os.path.join(folder_path, f'{name}.json')
+            with open(file_path, 'r') as f:
+                weights[name] = np.array(json.load(f))
+        
+        self.W1 = weights['W1']
+        self.b1 = weights['b1']
+        self.W2 = weights['W2']
+        self.b2 = weights['b2']
+        
+        print(f"Weights loaded from {folder_path}/ directory")
+
 def load_mnist_data():
     from tensorflow.keras.datasets import mnist
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
@@ -96,8 +135,18 @@ if __name__ == "__main__":
     # Train the network
     nn.train(X, y, epochs=1000, learning_rate=0.1, batch_size=32)
 
+    # Save the trained weights
+    nn.save_weights()
+
     # Test prediction
     test_image = X[:, 0:1]  # Example: first image
     prediction = nn.forward(test_image)
     predicted_digit = np.argmax(prediction)
     print(f"Predicted digit: {predicted_digit}")
+    
+    # Test loading weights
+    nn2 = NeuralNetwork()
+    nn2.load_weights()
+    prediction2 = nn2.forward(test_image)
+    predicted_digit2 = np.argmax(prediction2)
+    print(f"Loaded model prediction: {predicted_digit2}")

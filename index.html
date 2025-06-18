@@ -76,18 +76,28 @@
 
         // Neural network model
         async function loadModel() {
-            // Assume weights are saved as JSON or binary in model/ folder
-            const W1 = await (await fetch('model/W1.json')).json();
-            const b1 = await (await fetch('model/b1.json')).json();
-            const W2 = await (await fetch('model/W2.json')).json();
-            const b2 = await (await fetch('model/b2.json')).json();
+            try {
+                // Load weights and biases
+                const W1 = await (await fetch('model/W1.json')).json();
+                const b1 = await (await fetch('model/b1.json')).json();
+                const W2 = await (await fetch('model/W2.json')).json();
+                const b2 = await (await fetch('model/b2.json')).json();
 
-            return {
-                W1: tf.tensor2d(W1),
-                b1: tf.tensor2d(b1),
-                W2: tf.tensor2d(W2),
-                b2: tf.tensor2d(b2)
-            };
+                // Convert bias vectors from 2D to 1D arrays
+                const b1_flat = b1.map(row => row[0]);
+                const b2_flat = b2.map(row => row[0]);
+
+                return {
+                    W1: tf.tensor2d(W1),
+                    b1: tf.tensor1d(b1_flat),
+                    W2: tf.tensor2d(W2),
+                    b2: tf.tensor1d(b2_flat)
+                };
+            } catch (error) {
+                console.error('Error loading model:', error);
+                document.getElementById('prediction').innerText = 'Error: Model files not found. Please run train_and_save.py first.';
+                throw error;
+            }
         }
 
         function sigmoid(x) {
@@ -100,25 +110,60 @@
         }
 
         async function predict() {
-            const model = await loadModel();
-            const input = preprocessImage();
+            try {
+                const model = await loadModel();
+                const input = preprocessImage();
 
-            // Forward propagation
-            const z1 = input.matMul(model.W1.transpose()).add(model.b1.transpose());
-            const a1 = sigmoid(z1);
-            const z2 = a1.matMul(model.W2.transpose()).add(model.b2.transpose());
-            const a2 = softmax(z2);
+                // Forward propagation - corrected matrix operations
+                // input shape: [1, 784], W1 shape: [256, 784]
+                const z1 = input.matMul(model.W1.transpose()).add(model.b1);
+                const a1 = sigmoid(z1);
+                // a1 shape: [1, 256], W2 shape: [10, 256]
+                const z2 = a1.matMul(model.W2.transpose()).add(model.b2);
+                const a2 = softmax(z2);
 
-            const output = await a2.data();
-            const predictedDigit = output.indexOf(Math.max(...output));
-            document.getElementById('prediction').innerText = `Predicted Digit: ${predictedDigit}`;
-            document.getElementById('probabilities').innerText = `Probabilities: ${output.map((p, i) => `${i}: ${p.toFixed(2)}`).join(', ')}`;
+                const output = await a2.data();
+                const predictedDigit = output.indexOf(Math.max(...output));
+                
+                // Debug logging
+                console.log("Raw output:", output);
+                console.log("Output type:", typeof output);
+                console.log("Output length:", output.length);
+                console.log("Output values:", Array.from(output));
+                console.log("Max value:", Math.max(...output));
+                console.log("Predicted digit:", predictedDigit);
+                
+                // Check for NaN values
+                if (output.some(val => isNaN(val))) {
+                    console.error("NaN detected in output:", output);
+                    document.getElementById('prediction').innerText = 'Error: Invalid prediction (NaN detected)';
+                    document.getElementById('probabilities').innerText = '';
+                    return;
+                }
+                
+                // Convert Float32Array to regular array for display
+                const outputArray = Array.from(output);
+                
+                document.getElementById('prediction').innerText = `Predicted Digit: ${predictedDigit}`;
+                document.getElementById('probabilities').innerText = `Probabilities: ${outputArray.map((p, i) => {
+                    if (isNaN(p) || p === undefined || p === null) {
+                        return `${i}: NaN`;
+                    }
+                    // Convert to percentage for better readability
+                    const percentage = (p * 100).toFixed(2);
+                    return `${i}: ${percentage}%`;
+                }).join(', ')}`;
 
-            // Clean up
-            input.dispose();
-            a1.dispose();
-            a2.dispose();
-            Object.values(model).forEach(tensor => tensor.dispose());
+                // Clean up
+                input.dispose();
+                a1.dispose();
+                a2.dispose();
+                Object.values(model).forEach(tensor => tensor.dispose());
+            } catch (error) {
+                console.error('Prediction error:', error);
+                document.getElementById('prediction').innerText = 'Error: Could not make prediction. Please ensure model is trained.';
+                document.getElementById('probabilities').innerText = '';
+            }
         }
 
         document.getElementById('predictBtn').addEventListener('click', predict);

@@ -32,6 +32,7 @@ python train_and_save.py
 ```
 
 This will:
+
 - Load the MNIST dataset
 - Train the neural network for 1000 epochs
 - Save the trained weights to `model/` directory
@@ -62,6 +63,12 @@ handwritten-numbers-nn/
 ├── train_and_save.py      # Training script that saves weights
 ├── index.html             # Web interface
 ├── requirements.txt       # Python dependencies
+				numpy>=1.21.0
+				tensorflow>=2.8.0
+				matplotlib>=3.5.0
+				scikit-learn>=1.1.0
+				pandas>=1.4.0 
+
 ├── model/                 # Trained weights (created after training)
 │   ├── W1.json           # Hidden layer weights
 │   ├── b1.json           # Hidden layer biases
@@ -73,19 +80,23 @@ handwritten-numbers-nn/
 ## Technical Details
 
 ### Activation Functions
+
 - **Hidden Layer**: Sigmoid function for non-linearity
 - **Output Layer**: Softmax function for probability distribution
 
 ### Loss Function
+
 - **Cross-entropy loss** for multi-class classification
 
 ### Training
+
 - **Optimizer**: Mini-batch gradient descent
 - **Batch Size**: 32
 - **Learning Rate**: 0.1
 - **Epochs**: 1000
 
 ### Data Preprocessing
+
 - Images resized to 28×28 pixels
 - Pixel values normalized to [0, 1]
 - Labels converted to one-hot encoding
@@ -93,18 +104,22 @@ handwritten-numbers-nn/
 ## Troubleshooting
 
 ### "Model files not found" Error
+
 If you see this error in the web interface:
+
 1. Make sure you've run `python train_and_save.py` first
 2. Check that the `model/` directory exists with the weight files
 3. Ensure you're serving the files from a web server (not just opening the HTML file)
 
 ### Training Issues
+
 - If training is too slow, reduce the number of epochs in `train_and_save.py`
 - If accuracy is poor, try adjusting the learning rate or hidden layer size
 
 ## Performance
 
 The model typically achieves:
+
 - Training accuracy: ~95%+ on MNIST training set
 - Reasonable performance on hand-drawn digits
 
